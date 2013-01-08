@@ -1,0 +1,15 @@
+Source: python-isdhcplib
+Section: python
+Priority: extra
+Maintainer: Alexander V. Ignatyev <ialx84@ya.ru>
+Build-Depends: debhelper (>= 8.0.0), python-setuptools
+Standards-Version: 0.6.2
+Homepage: http://github.com/ialx/isdhcplib
+Vcs-Git: git://github.com/ialx/isdhcplib.git
+
+Package: python-isdhcplib
+Architecture: all
+Depends: ${python:Depends}
+Description: Dhcp client/server library
+     Modified by Alexander Ignatyev / based on pydhcplib by Mathieu Ignacio
+
