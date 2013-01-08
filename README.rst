@@ -16,3 +16,9 @@ You can choose **port** on which you want to read or write
 Can **encode and decode dhcp** packet
 
 Added support for **option 82**. It mostly used for customer authorizations and so on.
+
+Debian packaging
+----------------
+To build .deb package run
+
+dpkg-buildpackage -b
