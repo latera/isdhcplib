@@ -25,6 +25,9 @@ import sys
 # DhcpPacket : base class to encode/decode dhcp packets.
 
 class DhcpBasicPacket:
+    HEAD_OPTIONS = (53, )
+    TAIL_OPTIONS = (82, )
+
     def __init__(self):
         self.packet_data = [0]*240
         self.options_data = {}
@@ -127,27 +130,20 @@ class DhcpBasicPacket:
     def EncodePacket(self):
 
         # MUST set options in order to respect the RFC (see router option)
-        order = {}
+        head_options, tail_options, options = [], [], []
 
-        for each in self.options_data.keys() :
-            order[DhcpOptions[each]] = []
-            order[DhcpOptions[each]].append(DhcpOptions[each])
-            order[DhcpOptions[each]].append(len(self.options_data[each]))
-            order[DhcpOptions[each]] += self.options_data[each]
-            
-        options = []
+        for each in self.options_data.keys():
+            payload = [DhcpOptions[each], len(self.options_data[each])]
+            payload += self.options_data[each]
 
-        msg_type = self.GetOption("dhcp_message_type").pop()
+            if DhcpOptions[each] in self.HEAD_OPTIONS:
+                head_options += payload
+            elif DhcpOptions[each] in self.TAIL_OPTIONS:
+                tail_options += payload
+            else:
+                options += payload
 
-	opts_order = sorted(order.keys())
-	if msg_type in (2,5):
-	    try:
-		opts_order.remove(82)
-		opts_order.append(82)
-	    except:
-		pass
-
-	for each in opts_order : options += (order[each])
+        options = head_options + options + tail_options
 
         packet = self.packet_data[:240] + options
         packet.append(255) # add end option
