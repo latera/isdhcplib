@@ -1,3 +1,28 @@
+python-isdhcplib (0.7.8) testing; urgency=low
+
+  * Useful oneliners
+
+ -- Alexander V. Ignatyev <ialx84@ya.ru>  Sun, 21 Apr 2013 19:36:49 +0600
+
+python-isdhcplib (0.7.3) testing; urgency=low
+
+  * Added creation of InformAck packet
+
+ -- Alexander V. Ignatyev <ialx84@ya.ru>  Tue, 16 Apr 2013 14:43:27 +0600
+
+python-isdhcplib (0.7.2) testing; urgency=low
+
+  * Added type for option 252 (WPAD)
+
+ -- Alexander V. Ignatyev <ialx84@ya.ru>  Tue, 16 Apr 2013 13:38:10 +0600
+
+python-isdhcplib (0.7.1) testing; urgency=low
+
+  * Modified type handlers
+  * Added options reordering in EncodePacket
+
+ -- Alexander V. Ignatyev <ialx84@ya.ru>  Wed, 13 Mar 2013 12:01:55 -0500
+
 python-isdhcplib (0.6.2) testing; urgency=low
 
   * Initial release

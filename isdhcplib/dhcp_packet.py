@@ -24,6 +24,7 @@ from type_ipv4 import ipv4
 from type_strlist import strlist
 from type_hwmac import hwmac
 import sys
+from collections    import Iterable
 
 class DhcpPacket(DhcpBasicPacket):
     def str(self):
@@ -306,6 +307,15 @@ class DhcpPacket(DhcpBasicPacket):
         self.SetOption("ip_address_lease_time",src.GetOption("ip_address_lease_time"))
         self.TransformToDhcpAckPacket()
 
+    def CreateDhcpInformAckPacketFrom(self,src): # src = request or inform packet
+        self.SetOption("htype",src.GetOption("htype"))
+        self.SetOption("xid",src.GetOption("xid"))
+        self.SetOption("ciaddr",src.GetOption("ciaddr"))
+        self.SetOption("flags",src.GetOption("flags"))
+        self.SetOption("giaddr",src.GetOption("giaddr"))
+        self.SetOption("chaddr",src.GetOption("chaddr"))
+        self.TransformToDhcpAckPacket()
+
     def TransformToDhcpAckPacket(self): # src = request or inform packet
         self.SetOption("op",[2])
         self.SetOption("hlen",[6]) 
@@ -365,4 +375,112 @@ class DhcpPacket(DhcpBasicPacket):
         full_hw = self.GetOption("chaddr")
         if length!=[] and length<len(full_hw) : return full_hw[0:length]
         return full_hw
+
+
+
+
+
+
+
+    """ Helper functions for oneliners """
+    def ip_to_int(self, ip):
+        return reduce(lambda x, y: ( x << 8 ) + y, ip, 0)
+
+    # Make alias for MAC 2 Int func. They are same
+    mac_to_int = ip_to_int
+
+    def int_to_mac(self, val):
+        return [(val >> 8 * (5 - i)) % 256 for i in xrange(6)]
+
+    def int_to_ip(self, val):
+        return [(val >> 8 * (3 - i)) % 256 for i in xrange(4)]
+
+    def ip_to_str(self, ip):
+        if isinstance(ip, (int, long)):
+            ip = int_to_ip(ip)
+
+        return '.'.join(['%d' %c for c in ip]) if isinstance(ip, Iterable) else None
+
+    def mac_to_str(self, hwaddr):
+        if isinstance(hwaddr, (int, long)):
+            hwaddr = int_to_mac(hwaddr)
+
+        return ':'.join(['%02x' %c for c in hwaddr]) if isinstance(hwaddr, Iterable) else None
+
+
+    # Oneliners
+
+    # CHADDR
+    @property
+    def chaddr(self):
+        return self.mac_to_int(self.GetHardwareAddress())
+
+    @property
+    def chaddr_str(self):
+        return self.mac_to_str(self.GetHardwareAddress())
+
+    # GIADDR
+    @property
+    def giaddr(self):
+        return self.ip_to_int(self.GetOption('giaddr'))
+
+    @property
+    def giaddr_str(self):
+        return self.ip_to_str(self.GetOption('giaddr'))
+
+    # CIADDR
+    @property
+    def ciaddr(self):
+        return self.ip_to_int(self.GetOption('ciaddr'))
+
+    @property
+    def ciaddr_str(self):
+        return self.ip_to_str(self.GetOption('ciaddr'))
+
+    # SIADDR
+    @property
+    def siaddr(self):
+        return self.ip_to_int(self.GetOption('siaddr'))
+
+    @property
+    def siaddr_str(self):
+        return self.ip_to_str(self.GetOption('siaddr'))
+
+    # server_identifier
+    @property
+    def server_identifier(self):
+        return self.ip_to_int(self.GetOption('server_identifier'))
+
+    @property
+    def server_identifier_str(self):
+        return self.ip_to_str(self.GetOption('server_identifier'))
+
+
+    # request_ip_address
+    @property
+    def request_ip_address(self):
+        return self.ip_to_int(self.GetOption('request_ip_address'))
+
+    @property
+    def request_ip_address_str(self):
+        return self.ip_to_str(self.GetOption('request_ip_address'))
+
+    # HOSTNAME
+    @property
+    def host_name(self):
+        return ''.join([chr(c) for c in self.GetOption('host_name') if c != 0]).decode("cp866")
+
+    # parameter_request_list
+    @property
+    def parameter_request_list(self):
+        return self.GetOption('parameter_request_list')
+
+    # relay_agent
+    @property
+    def relay_agent(self):
+        return self.GetOption('relay_agent')
+
+    @property
+    def flag_broadcast(self):
+        return 128 in self.GetOption('flags')
 

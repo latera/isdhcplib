@@ -105,7 +105,7 @@ class DhcpBasicPacket:
                              "char":[1,0,1], "16-bits":[2,0,1],
                              "32-bits":[4,0,1], "identifier":[0,2,1],
                              "RFC3397":[0,4,1],"none":[0,0,1],"char+":[0,1,1], 
-                             "RFC3046":[0,1,1],"CSR":[0,1,1],
+                             "RFC3046":[0,1,1],"RFC3442":[0,1,1],
                              }
             
             specs = fields_specs[DhcpOptionsTypes[DhcpOptions[name]]]
@@ -197,3 +197,4 @@ class DhcpBasicPacket:
         # cut packet_data to remove options
         
         self.packet_data = self.packet_data[:240] # base packet length with magic cookie
+
