@@ -14,6 +14,10 @@ en3_manpages=['man/man3/isdhcplib.strlist.3.gz',
               'man/man3/isdhcplib.ipv4.3.gz']
 en8_manpages=['man/man8/isdhcp.8.gz']
 
+packages = [
+    'isdhcplib',
+]
+
 setup(
     name='isdhcplib',
     version="1.0",
@@ -22,7 +26,7 @@ setup(
     author='Alexander Ignatyev / based on pydhcplib by Mathieu Ignacio',
     author_email='ialx84@ya.ru',
     url='https://github.com/ialx/isdhcplib',
-    packages=find_packages(),
+    packages=packages,
     scripts=['scripts/isdhcp'],
     test_suite='tests.alltests',
     data_files=[("share/man/man8",en8_manpages),
