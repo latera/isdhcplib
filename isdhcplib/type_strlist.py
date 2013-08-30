@@ -1,8 +1,9 @@
-# pydhcplib
-# Copyright (C) 2008 Mathieu Ignacio -- mignacio@april.org
+# isdhcplib
+# Copyright (c) 2013 Alexander V. Ignatyev <ialx84@ya.ru>
+# Based on pydhcplib by Mathieu Ignacio -- mignacio@april.org
 #
-# This file is part of pydhcplib.
-# Pydhcplib is free software; you can redistribute it and/or modify
+# This file is part of isdhcplib.
+# Isdhcplib is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
@@ -15,33 +16,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-class strlist :
-    def __init__(self, data="") :
+class strlist:
+    def __init__(self, value=""):
         str_type = type(data)
         self._str = ""
-        self._list = []
+        self._numeric_list = []
         
-        if str_type == str :
-            self._str = data
-            for each in range(len(self._str)):
-                self._list.append(ord(self._str[each]))
-        elif str_type == list:
-            self._list = data
-            self._str = "".join(map(chr, self._list))
+        if isinstance(value, basestring):
+            self._str          = value
+            self._numeric_list = _StringToNumericList(value)
+        elif isinstance(value, (list, tuple)):
+            if not self.ValidNumericList(value): raise TypeError("List can't be converted to string")
+
+            self._numeric_list = value
+            self._str = _NumericListToString(value)
         else : raise TypeError , 'strlist init : Valid types are str and  list of int'
 
-    # return string
-    def str(self):
-        return self._str
-
-    # return list (useful for DhcpPacket class)
-    def list(self):
-        return self._list
-
-    # return int
-    # TODO: FIXME
-    def int(self):
-        return 0
+    #
+    # Private converters
+    #
+    def _StringToNumericList(self, value):
+        return map(ord, value)
+    
+    def _NumericListToString(self, value):
+        return "".join(map(chr, value))
+    #
+    # Public validators
+    #
+    def ValidNumericList(self, value):
+        return len([byte for byte in value if type(byte) == int]) > 0
 
 
 
@@ -61,3 +64,16 @@ class strlist :
         if self._str == other : return 0
         return 1
 
+    # return string
+    def __str__(self):
+        return self._str
+
+    # return list (useful for DhcpPacket class)
+    def __iter__(self):
+        for byte in self._numeric_list:
+            yield byte
+
+    # return int
+    # TODO: FIXME
+    def __int__(self):
+        return 0

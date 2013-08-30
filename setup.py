@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 fr8_manpages=['man/fr/man8/isdhcp.8.gz']
 fr3_manpages=['man/fr/man3/isdhcplib.3.gz',
@@ -16,14 +16,15 @@ en8_manpages=['man/man8/isdhcp.8.gz']
 
 setup(
     name='isdhcplib',
-    version="0.6.2",
+    version="1.0",
     license='GPL v3',
     description='Dhcp client/server library',
     author='Alexander Ignatyev / based on pydhcplib by Mathieu Ignacio',
     author_email='ialx84@ya.ru',
     url='https://github.com/ialx/isdhcplib',
-    packages=['isdhcplib'],
+    packages=find_packages(),
     scripts=['scripts/isdhcp'],
+    test_suite='tests.alltests',
     data_files=[("share/man/man8",en8_manpages),
             #            ("share/man/fr/man8",fr8_manpages),
             ("share/man/fr/man3",fr3_manpages),

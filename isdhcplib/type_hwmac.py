@@ -1,8 +1,9 @@
-# pydhcplib
-# Copyright (C) 2008 Mathieu Ignacio -- mignacio@april.org
+# isdhcplib
+# Copyright (c) 2013 Alexander V. Ignatyev <ialx84@ya.ru>
+# Based on pydhcplib by Mathieu Ignacio -- mignacio@april.org
 #
-# This file is part of pydhcplib.
-# Pydhcplib is free software; you can redistribute it and/or modify
+# This file is part of isdhcplib.
+# Isdhcplib is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
@@ -16,14 +17,13 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-from binascii import unhexlify,hexlify
-
 # Check and convert hardware/nic/mac address type
 class hwmac:
     def __init__(self,value="00:00:00:00:00:00") :
         self._hw_numlist = []
         self._hw_string = ""
         hw_type = type(value)
+
         if hw_type == str :
             value = value.strip()
             self._hw_string = value
@@ -34,7 +34,6 @@ class hwmac:
             self._CheckNumList()
             self._NumlistToString()
         else : raise TypeError , 'hwmac init : Valid types are str and list'
-
 
 
     # Check if _hw_numlist is valid and raise error if not.
@@ -81,5 +80,74 @@ class hwmac:
         return 0
 
 
+
+class HWADDR:
+    re_ptrnHwaddr = re_hwaddr = re.compile(r'(?i)[0-9a-f]+')
+
+    def __init__(self, value="00:00:00:00:00:00"):
+        self._hw_numlist = []
+        self._hw_string = ""
+
+        if isinstance(value, basestring):
+            if not self.ValidString(value): raise TypeError("Wrong string for HWADDR")
+
+            self._hw_string  = value
+            self._hw_numlist = self._StringToNumlist(value)
+        elif isinstance(value, (list, tuple)):
+            if not self.ValidNumlist(value): raise TypeError("Wrong list for HWADDR")
+
+            self._hw_numlist = value
+            self._hw_string  = self._NumlistToString(value)
+        else : raise TypeError , 'Valid types for HWADDR are str and list'
+
+    #
+    # Private converters
+    #
+
+    def _StringToNumlist(self, value):
+        # Normalize string value
+        hex_list = value.split(":")
+
+        return [int(octet, 16) for octet in hex_list]
+
+    # Convert NumList type ip to String type ip
+    def _NumlistToString(self, value):
+        return ":".join(['%x' % octet for octet in value])
+
+    #
+    # Public validators
+    #
+
+    def ValidString(self, value):
+        octets = value.split(":")
+        return len(octets) == 6
+
+    def ValidNumlist(self, value):
+        return len([octet for octet in value if type (octet) == int and not octet >> 8]) == 6
+
+
+    # Convert String type ip to NumList type ip
+    # return ip string
+    def __str__(self) :
+        return self._hw_string
+
+    # return ip list (useful for DhcpPacket class)
+    def __iter__(self) :
+        for octet in self._hw_numlist:
+            yield octet
+
+    def __hash__(self) :
+        return self._hw_string.__hash__()
+
+    def __repr__(self) :
+        return self._hw_string
+
+    def __cmp__(self,other) :
+        if self._hw_string == other : return 0
+        return 1
+
+    def __nonzero__(self) :
+        if self._hw_string != "00:00:00:00:00:00" : return 1
+        return 0
 
 

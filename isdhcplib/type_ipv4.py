@@ -1,8 +1,9 @@
-# pydhcplib
-# Copyright (C) 2008 Mathieu Ignacio -- mignacio@april.org
+# isdhcplib
+# Copyright (c) 2013 Alexander V. Ignatyev <ialx84@ya.ru>
+# Based on pydhcplib by Mathieu Ignacio -- mignacio@april.org
 #
-# This file is part of pydhcplib.
-# Pydhcplib is free software; you can redistribute it and/or modify
+# This file is part of isdhcplib.
+# Isdhcplib is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
@@ -18,80 +19,78 @@
 
 # Check and convert ipv4 address type
 class ipv4:
-    def __init__(self,value="0.0.0.0") :
-        ip_type = type(value)
-        if ip_type == str :
-            if not self.CheckString(value) : raise ValueError, "ipv4 string argument is not an valid ip "
-            self._ip_string = value
-            self._StringToNumlist()
-            self._StringToLong()
-            self._NumlistToString()
-        elif ip_type == list :
-            if not self.CheckNumList(value) : raise ValueError, "ipv4 list argument is not an valid ip "
+    def __init__(self, value="0.0.0.0") :
+        self._ip_string = "0.0.0.0"
+        self._ip_numlist = (0,0,0,0)
+        self._ip_long = 0
+
+        if isinstance(value, basestring):
+            if not self.ValidString(value) : raise ValueError, "ipv4 string argument is not an valid ip "
+
+            self._ip_string  = value
+            self._ip_numlist = self._StringToNumlist(value) # convert to list
+            self._ip_long    = self._StringToLong(value)    # convert lo int
+        elif isinstance(value, (list, tuple)):
+            if not self.ValidList(value) : raise ValueError, "ipv4 list argument is not an valid ip "
+
             self._ip_numlist = value
-            self._NumlistToString()
-            self._StringToLong()
-        elif ip_type == int or ip_type == long:
-            self._ip_long = value
-            self._LongToNumlist()
-            self._NumlistToString()
-        elif ip_type == bool :
-            self._ip_long = 0
-            self._LongToNumlist()
-            self._NumlistToString()
-            
+            self._ip_string  = self._NumlistToString(value)
+            self._ip_long    = self._NumlistToLong(value)
+        elif isinstance(value, (int, long)):
+            if not self.ValidInteger(value) : raise ValueError, "ipv4 int argument is not an valid ip "
+
+            self._ip_long    = value
+            self._ip_string  = self._LongToString(value)
+            self._ip_numlist = self._LongToNumlist(value)
+
         else : raise TypeError , 'ipv4 init : Valid types are str, list, int or long'
 
-    # Convert Long type ip to numlist ip
-    def _LongToNumlist(self) :
-        # Convert IPv4 long integer to list
-        self._ip_numlist = [(self._ip_long >> 8 * (3 - i)) % 256 for i in xrange(4)]
-        if not self.CheckNumList(self._ip_numlist) : raise ValueError, "ipv4 list argument is not an valid ip "
-
-    # Convert String type ip to Long type ip
-    def _StringToLong(self) :
-        ip_numlist = map(int,self._ip_string.split('.'))
-        self._ip_long = reduce(lambda x, y: ( x << 8 ) + y, ip_numlist, 0)
-        if not self.CheckNumList(self._ip_numlist) : raise ValueError, "ipv4 list argument is not an valid ip "
-
-    # Convert NumList type ip to String type ip
-    def _NumlistToString(self) :
-        self._ip_string = ".".join(map(str,self._ip_numlist))
-        if not self.CheckNumList(self._ip_numlist) : raise ValueError, "ipv4 list argument is not an valid ip "
+    #
+    # Private conversion methods
+    #
 
     # Convert String type ip to NumList type ip
-    def _StringToNumlist(self) :
-        self._ip_numlist = map(int,self._ip_string.split('.'))
-        if not self.CheckNumList(self._ip_numlist) : raise ValueError, "ipv4 list argument is not an valid ip "
+    def _StringToNumlist(self, value):
+        return map(int, value.split('.'))
 
-    """ Public methods """
+    # Convert String type ip to Long type ip
+    def _StringToLong(self, value):
+        ip_numlist = map(int, value.split('.'))
+        return self._NumlistToLong(ip_numlist)
+
+    # Convert NumList type ip to String type ip
+    def _NumlistToString(self, value) :
+        return ".".join(map(str, value))
+
+    def _NumlistToLong(self, value) :
+        return reduce(lambda x, y: ( x << 8 ) + y, value, 0)
+
+    # Convert Long type ip to str ip
+    def _LongToString(self, value):
+        # Convert IPv4 long integer to string
+        ip_numlist = self._LongToNumlist(value)
+        return self._NumlistToString(ip_numlist)
+
+    # Convert Long type ip to numlist ip
+    def _LongToNumlist(self, value):
+        # Convert IPv4 long integer to list
+        return [(self._ip_long >> 8 * (3 - i)) % 256 for i in xrange(4)]
+
+    #
+    # Public validators
+    #
+
     # Check if _ip_numlist is valid and raise error if not.
-    # self._ip_numlist
-    def CheckNumList(self,value) :
-        if len(value) != 4 : return False
-        for part in value :
-            if part < 0 or part > 255 : return False
-        return True
+    def ValidList(self, octets):
+        return len([octet for octet in octets if not octet >> 8]) == 4
 
     # Check if _ip_numlist is valid and raise error if not.
-    def CheckString(self,value) :
-        tmp = value.strip().split('.')
-        if len(tmp) != 4 :  return False
-        for each in tmp : 
-            if not each.isdigit() : return False
-        return True
-    
-    # return ip string
-    def str(self) :
-        return self._ip_string
+    def ValidString(self, value):
+        octets = value.strip().split('.')
+        return len([octet.isdigit() for octet in octets]) == 4
 
-    # return ip list (useful for DhcpPacket class)
-    def list(self) :
-        return self._ip_numlist
-
-    # return Long ip type (useful for SQL ip address backend)
-    def int(self) :
-        return self._ip_long
+    def ValidInteger(self, value):
+        return not value >> 32 or False
 
 
     """ Useful function for native python operations """
@@ -109,5 +108,14 @@ class ipv4:
         if self._ip_long != 0 : return 1
         return 0
 
+    def __str__(self):
+        return self._ip_string
+
+    def __int__(self) :
+        return self._ip_long
+
+    def __iter__(self):
+        for octet in self._ip_numlist:
+            yield octet
 
 

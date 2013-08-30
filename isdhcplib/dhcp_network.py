@@ -1,8 +1,9 @@
-# pydhcplib
-# Copyright (C) 2008 Mathieu Ignacio -- mignacio@april.org
+# isdhcplib
+# Copyright (c) 2013 Alexander V. Ignatyev <ialx84@ya.ru>
+# Based on pydhcplib by Mathieu Ignacio -- mignacio@april.org
 #
-# This file is part of pydhcplib.
-# Pydhcplib is free software; you can redistribute it and/or modify
+# This file is part of isdhcplib.
+# Isdhcplib is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 3 of the License, or
 # (at your option) any later version.
@@ -123,10 +124,10 @@ class DhcpNetwork:
 
     # Server side Handle methods
     def HandleDhcpDiscover(self, packet):
-	pass
+    pass
 
     def HandleDhcpRequest(self, packet):
-	pass
+    pass
 
     def HandleDhcpDecline(self, packet):
         pass

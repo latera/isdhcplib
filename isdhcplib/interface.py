@@ -14,14 +14,19 @@ import array
 import fcntl
 import struct
 import socket
+import platform
 
 class interface:
     """ ioctl stuff """
 
+    # get platform architecture
+    ARCH = 64 if platform.machine().endswith('64') else 32
+
     IFNAMSIZ = 16               # interface name size
+    IFCONFSIZ = 1024
+
 
     # From <bits/ioctls.h>
-
     SIOCGIFADDR = 0x8915        # get PA address
     SIOCGIFBRDADDR  = 0x8919    # get broadcast PA address
     SIOCGIFCONF = 0x8912        # get iface list
@@ -52,6 +57,7 @@ class interface:
     IFF_PORTSEL = 0x2000   # Can set media type.
     IFF_AUTOMEDIA = 0x4000 # Auto media select active.
 
+    
 
     def __init__(self):
         # create a socket to communicate with system
@@ -78,18 +84,30 @@ class interface:
     def getInterfaceList(self):
         """ Get all interface names in a list """
         # get interface list
-        buffer = array.array('c', '\0' * 1024)
+        buffer = array.array('c', '\0' * self.IFCONFSIZ)
         ifconf = struct.pack("iP", buffer.buffer_info()[1], buffer.buffer_info()[0])
         result = self._ioctl(self.SIOCGIFCONF, ifconf)
 
         # loop over interface names
         iflist = []
         size, ptr = struct.unpack("iP", result)
-        for idx in range(0, size, 32):
-            ifconf = buffer.tostring()[idx:idx+32]
-            name, dummy = struct.unpack("16s16s", ifconf)
-            name, dummy = name.split('\0', 1)
-            iflist.append(name)
+        if size == self.IFCONFSIZ:
+            # TODO:
+            # Passed buffer was not big enough to fit all interfaces.
+            # We should increase buffer size and try again
+            pass
+        
+        # on 64bit platforms ifreq field takes 20 bytes and 16 on 32bit
+        field_size = 16 if self.ARCH == 32 else 20
+
+        # walk through buffer
+        for idx in xrange(0, size, field_size*2):
+            ifconf = buffer.tostring()[idx:idx+(field_size*2)]
+            name, ip = struct.unpack("%ds%ds" % (field_size, field_size), ifconf)
+
+            name = "".join([c for c in name[:self.IFNAMSIZ] if ord(c) != 0])
+            ip = map(ord, ip[:4])
+            iflist.append((name, ip))
 
         return iflist
 
