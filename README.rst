@@ -1,7 +1,10 @@
 isdhcplib
 =========
 
-Pure python DHCP library.
+**Description:** Pure python DHCP library.
+
+**Build status:** |travis-ci|
+
 
 Origin
 ------
@@ -22,3 +25,6 @@ Debian packaging
 To build .deb package run
 
 dpkg-buildpackage -b
+
+
+.. |travis-ci| image:: https://travis-ci.org/ialx/isdhcplib.png
