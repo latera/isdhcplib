@@ -3,7 +3,7 @@
 
 import unittest
 
-from test_type_ipv4 import TestIPv4
+from test_datatypes import TestIPv4, TestStrlist
 
 
 if __name__ == "__main__":
