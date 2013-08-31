@@ -18,7 +18,6 @@
 
 class strlist:
     def __init__(self, value=""):
-        str_type = type(data)
         self._str = ""
         self._numeric_list = []
         
@@ -45,7 +44,6 @@ class strlist:
     #
     def ValidNumericList(self, value):
         return len([byte for byte in value if type(byte) == int]) > 0
-
 
 
     """ Useful function for native python operations """
