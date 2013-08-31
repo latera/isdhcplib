@@ -37,8 +37,8 @@ class TestStrlist(unittest.TestCase):
     orig_list   = [116, 101 , 115, 116]
 
     def setUp(self):
-        self.strlist_str  = strlist(orig_string)
-        self.strlist_list = strlist(orig_list)
+        self.strlist_str  = strlist(self.orig_string)
+        self.strlist_list = strlist(self.orig_list)
 
     def testStrlist(self):
         self.assertEqual(str(self.strlist_list), self.orig_string)
@@ -51,4 +51,3 @@ class TestStrlist(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
