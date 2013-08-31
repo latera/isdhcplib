@@ -23,12 +23,12 @@ class strlist:
         
         if isinstance(value, basestring):
             self._str          = value
-            self._numeric_list = _StringToNumericList(value)
+            self._numeric_list = self._StringToNumericList(value)
         elif isinstance(value, (list, tuple)):
             if not self.ValidNumericList(value): raise TypeError("List can't be converted to string")
 
             self._numeric_list = value
-            self._str = _NumericListToString(value)
+            self._str = self._NumericListToString(value)
         else : raise TypeError , 'strlist init : Valid types are str and  list of int'
 
     #
