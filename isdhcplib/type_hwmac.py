@@ -81,20 +81,18 @@ class hwmac:
 
 
 
-class HWADDR:
-    re_ptrnHwaddr = re_hwaddr = re.compile(r'(?i)[0-9a-f]+')
-
+class hwaddr:
     def __init__(self, value="00:00:00:00:00:00"):
         self._hw_numlist = []
         self._hw_string = ""
 
         if isinstance(value, basestring):
-            if not self.ValidString(value): raise TypeError("Wrong string for HWADDR")
+            if not self.ValidString(value): raise ValueError("Wrong string for HWADDR")
 
             self._hw_string  = value
             self._hw_numlist = self._StringToNumlist(value)
         elif isinstance(value, (list, tuple)):
-            if not self.ValidNumlist(value): raise TypeError("Wrong list for HWADDR")
+            if not self.ValidNumlist(value): raise ValueError("Wrong list for HWADDR")
 
             self._hw_numlist = value
             self._hw_string  = self._NumlistToString(value)
