@@ -103,6 +103,7 @@ class DhcpPacket(DhcpBasicPacket):
         # Transform textual data into dhcp binary data
 
         p = parameter.strip()
+        
         # 1- Search for header informations or specific parameter
         if p == 'op' or p == 'htype' :
             value = value.strip()
