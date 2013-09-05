@@ -95,13 +95,21 @@ class ipv4:
 
     """ Useful function for native python operations """
 
+    def __bool__(self):
+        return bool(self._ip_long)
+
+    def __len__(self):
+        return len(self._ip_numlist)
+
     def __hash__(self) :
         return self._ip_long.__hash__()
 
     def __repr__(self) :
         return self._ip_string
 
-    def __cmp__(self,other) :
+    def __cmp__(self, other):
+        if isinstance(other, (int, long)):
+            return cmp(self._ip_long, other)
         return cmp(self._ip_long, other._ip_long);
 
     def __nonzero__(self) :

@@ -1,4 +1,5 @@
 #-*- coding: utf-8 -*-
+from netaddr        import IPAddress, IPNetwork
 
 class RFC3046:
     """
@@ -73,6 +74,9 @@ class RFC3046:
             x = 0
 
         return x
+
+    def __len__(self):
+        return len(self._data)
 
 class RFC3442:
     def __init__(self, routes):

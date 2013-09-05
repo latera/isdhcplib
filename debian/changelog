@@ -1,3 +1,9 @@
+python-isdhcplib (1.0.0) testing; urgency=low
+
+  * Useful oneliners
+
+ -- Alexander V. Ignatyev <ialx84@ya.ru>  Wed, 05 Sep 2013 12:01:21 +0600
+
 python-isdhcplib (0.7.8) testing; urgency=low
 
   * Useful oneliners

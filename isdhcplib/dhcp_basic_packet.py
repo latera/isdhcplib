@@ -16,186 +16,328 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import operator
-from struct import unpack
-from struct import pack
-from dhcp_constants import *
 import sys
+from struct import pack, unpack
+from dhcp_constants import *
+from type_ipv4 import ipv4
+from type_strlist import strlist
+from type_rfc import *
 
 
 # DhcpPacket : base class to encode/decode dhcp packets.
 
-class DhcpBasicPacket:
-    HEAD_OPTIONS = (53, )
-    TAIL_OPTIONS = (82, )
 
-    def __init__(self):
-        self.packet_data = [0]*240
+class DHCP_DECODER(object):
+    def decode(self, type_spec, data, data_len):
+        if type_spec not in self._type_map:
+            print "No decoder for spec: %s" % type_spec
+
+            return data[:data_len]
+
+        decoder = self._type_map[type_spec]
+
+        return decoder(self, data, data_len)
+
+    def __call__(self, *args, **kwargs):
+        return self.decode(*args, **kwargs)
+
+    def validate_len(self, type_spec, data_len):
+        spec = self._spec_map.get(type_spec, None)
+        if not spec:
+            print "No decoder for spec: %s" % type_spec
+            return False
+
+        print type_spec, data_len
+
+        if (spec[0] != 0 and spec[0] == data_len) \
+            or (spec[1] <= data_len and data_len % spec[2] == 0):
+            return True
+
+        return False
+
+    def _decode_char(self, data, data_len):
+        # spec: fixed_len: 1, min_len: 1, multiplicator: 0
+        if len(data) == 1:
+            return data[:1]
+
+        return None
+
+    def _decode_char_plus(self, data, data_len):
+        # spec: fixed_len: 0, min_len: 1, multiplicator: 1
+        if len(data) >= 1:
+            return data[:data_len]
+
+        return None
+
+    def _decode_ipv4(self, data, data_len):
+        # spec: fixed_len: 4, min_len: 4, multiplicator: 0
+        if len(data) == 4 and data_len == 4:
+            return ipv4(data)
+
+        return None
+
+    def _decode_ipv4_plus(self, data, data_len):
+        # spec: fixed_len: 0, min_len: 4, multiplicator: 4
+        if len(data) >= 4 and data_len % 4 == 0:
+            return data
+
+        return None
+
+    def _decode_string(self, data, data_len):
+        # spec: fixed_len: 0, min_len: 1, multiplicator: 1
+        if len(data) >= 1:
+            return data[:data_len]
+
+        return None
+
+    def _decode_32_bits(self, data, data_len):
+        if len(data) != 4:
+            return None
+
+        val = int(ipv4(data))
+        return data
+
+    def _decode_rfc4702(self, data, data_len):
+        # spec: fixed_len: 0, min_len: 3, multiplicator: 0
+        if len(data) >= 3 and data_len >= 3:
+            return data[:data_len]
+        return None
+
+    def _decode_rfc3046(self, data, data_len):
+        return RFC3046(data)
+
+    def _decode_rfc3442(self, data, data_len):
+        return RFC3442(data)
+
+    _type_map = {
+        "char":   _decode_char,
+        "char+":  _decode_char_plus,
+        "ipv4":   _decode_ipv4,
+        "ipv4+":  _decode_ipv4_plus,
+        "string": _decode_string,
+        "32-bits": _decode_32_bits,
+        "RFC3046": _decode_rfc3046,
+        "RFC3442": _decode_rfc3442,
+        "RFC4702": _decode_rfc4702,
+    }
+
+    _spec_map = {
+        "char":   [1, 1, 0],
+        "char+":  [0, 0, 1],
+        "ipv4":   [4, 4, 0],
+        "ipv4+":  [0, 4 ,4],
+        "32-bits": [4, 4, 0],
+        "string": [0, 0, 1],
+        "RFC3046": None,
+        "RFC3442": None,
+        "RFC4702": [0, 3, 1],
+    }
+
+
+class DHCPBasicPacket(object):
+    _offset_options = 236
+
+    decoder = DHCP_DECODER()
+
+    def __init__(self, data):
+        # multimethod?
+        if (not data): return False
+
+        # init objects
+        self.fields_data  = {}
         self.options_data = {}
-        self.packet_data[236:240] = MagicCookie
-        self.source_address = False
-        
-    def IsDhcpPacket(self):
-        if self.packet_data[236:240] != MagicCookie : return False
-        return True
 
-    # Check if variable is a list with int between 0 and 255
-    def CheckType(self,variable):
-        if type(variable) == list :
-            for each in variable :
-                if (type(each) != int)  or (each < 0) or (each > 255) :
-                    return False
-            return True
-        else : return False
-        
+        # calc data length
+        data_len = len(data)
 
-    def DeleteOption(self,name):
-        # if name is a standard dhcp field
-        # Set field to 0
-        if DhcpFields.has_key(name) :
-            begin = DhcpFields[name][0]
-            end = DhcpFields[name][0]+DhcpFields[name][1]
-            self.packet_data[begin:end] = [0]*DhcpFields[name][1]
-            return True
+        # convert string to tuple of intergers
+        if isinstance(data, basestring):
+            # unpack to tuple of integers
+            data = list(unpack("!%dB" % data_len, data))
 
-        # if name is a dhcp option
-        # delete option from self.option_data
-        elif self.options_data.has_key(name) :
-            # forget how to remove a key... try delete
-            self.options_data.__delitem__(name)
-            return True
+        # packet_data is header with magic cookie
+        self.fields_data  = data[:self._offset_options + 4]
+        self.options_data = self._DecodeOptions(data, data_len)
 
-        return False
 
-    def GetOption(self,name):
-        if DhcpFields.has_key(name) :
-            option_info = DhcpFields[name]
-            return self.packet_data[option_info[0]:option_info[0]+option_info[1]]
+    def _DecodeOptions(self, data, data_len):
+        # lookup magic cookie. ideally it should be found exactly after fields.
+        # but as reported some clients can make offset before magic cookie
+        offset = self._offset_options
+        options = {}
 
-        elif self.options_data.has_key(name) :
-            return self.options_data[name]
-
-        return []
-        
-
-    def SetOption(self,name,value):
-
-        # Basic value checking :
-        # has value list a correct length
-        
-        # if name is a standard dhcp field
-        if DhcpFields.has_key(name) :
-            if len(value) != DhcpFields[name][1] :
-                sys.stderr.write( "pydhcplib.dhcp_basic_packet.setoption error, bad option length : "+name)
-                return False
-            begin = DhcpFields[name][0]
-            end = DhcpFields[name][0]+DhcpFields[name][1]
-            self.packet_data[begin:end] = value
-            return True
-
-        # if name is a dhcp option
-        elif DhcpOptions.has_key(name) :
-
-            # fields_specs : {'option_code':fixed_length,minimum_length,multiple}
-            # if fixed_length == 0 : minimum_length and multiple apply
-            # else : forget minimum_length and multiple 
-            # multiple : length MUST be a multiple of 'multiple'
-            # FIXME : this definition should'nt be in dhcp_constants ?
-            fields_specs = { "ipv4":[4,0,1], "ipv4+":[0,4,4],
-                             "string":[0,0,1], "bool":[1,0,1],
-                             "char":[1,0,1], "16-bits":[2,0,1],
-                             "32-bits":[4,0,1], "identifier":[0,2,1],
-                             "RFC3397":[0,4,1],"none":[0,0,1],"char+":[0,1,1], 
-                             "RFC3046":[0,1,1],"RFC3442":[0,1,1],
-                             }
+        # iterate through data
+        while (offset < data_len):
+            if data[offset:offset+4] == MAGIC_COOKIE: 
+                break
             
-            specs = fields_specs[DhcpOptionsTypes[DhcpOptions[name]]]
-            length = len(value)
-            if (specs[0]!=0 and specs==length) or (specs[1]<=length and length%specs[2]==0):
-                self.options_data[name] = value
-                return True
-            else :
-                return False
+            #print "MAGIC COOKIE NOT FOUND:", offset
+            offset += 1
+        
+        # set offset after magic cookie
+        offset += 4
+        # last found option
+        last_option = None
 
-        sys.stderr.write( "pydhcplib.dhcp_basic_packet.setoption error : unknown option "+name)
+        # parse options
+        while (offset < data_len):
+            option_start = option_end = offset
+
+            if data[offset] == 255:
+                break
+            elif data[offset] == 0:
+                if last_option:
+                    last_option_data = options[last_option]
+                    last_option[3] += [0]
+                offset += 1
+                continue
+            else:
+                # parse option header
+                option, option_len = data[option_start:option_start + 2]
+
+                # calculate position of last option byte
+                option_end = option_start + option_len + 2
+
+                # get option data
+                option_data = data[option_start + 2:option_end]
+
+                # update offset
+                offset = option_end
+
+                # pase option data
+                name, option_type = DHCP_OPTIONS.get(option, (None, None))
+
+                if not name or not option_type:
+                    print "Unknown DHCP OPTION: %s" % option
+                    continue
+
+                options[name] = (option, option_type, option_len, option_data)
+                last_option = name
+
+        return options
+
+    def cache(func):
+        def wrapper(*args, **kwargs):
+            cls, option_name = args
+
+            # check if cache object exists
+            if not getattr(cls, "_cache", None):
+                setattr(cls, "_cache", {})
+
+            # try to get value from cache
+            if option_name not in cls._cache: 
+                cls._cache[option_name] = func(*args, **kwargs)
+
+            return cls._cache[option_name]
+        return wrapper
+
+    def uncache(func):
+        def wrapper(*args, **kwargs):
+            cls, option_name = args
+
+            # check if cache object exists
+            cache = getattr(cls, "_cache", {})
+
+            if option_name in cache: 
+                del cache[option_name]
+
+            return func(*args, **kwargs)
+        return wrapper
+
+    @cache
+    def GetOption(self, name):
+        # Requested field
+        if name in DHCP_FIELDS:
+            # Get option data
+            pos, option_len, option_type = DHCP_FIELDS[name]
+            option_data = self.fields_data[pos:pos + option_len]
+        # Requested option
+        elif name in self.options_data:
+            # Get option data
+            option_num, option_type, option_len, option_data = self.options_data[name]
+        else:
+            return None
+        
+        # Decode & return result
+        return self.decoder(option_type, option_data, option_len)
+
+    @uncache
+    def DeleteOption(self, name):
+        # Requested field
+        if name in DHCP_FIELDS:
+            # Get option data
+            pos, option_len, option_type = DHCP_FIELDS[name]
+            self.fields_data[pos:pos + option_len] = [0] * option_len
+            return True
+        # Requested option
+        elif name in self.options_data:
+            # Get option data
+            if name in self.options_data:
+                del self.options_data[name]
+                return True
+        else:
+            return False
+        
+        # Decode & return result
         return False
 
+    def SetOption(self, name, value):
+        if name in DHCP_FIELDS:
+            # validate value
+            pos, field_len, field_type = DHCP_FIELDS[name]
+
+            if len(value) != field_len:
+                print "Wrong value=%d for field %s. Expected %d" % (len(value), name, field_len)
+                return False
+
+            self.fields_data[pos:pos + field_len] = value
+            return True
+        # Requested options
+        elif name in DHCP_OPTION_NUM:
+            # Get option data
+            option_num = DHCP_OPTION_NUM[name]
+
+            option_name, option_type = DHCP_OPTIONS[option_num]
+            if self.decoder.validate_len(option_type, len(value)):
+                self.options_data[name] = (option_num, option_type, len(value), value)
+                return True
+
+        else:
+            print "Unknown option: %s" % name
+            return False
 
 
-    def IsOption(self,name):
-        if self.options_data.has_key(name) : return True
-        elif DhcpFields.has_key(name) : return True
-        else : return False
+    @property
+    def IsDhcpPacket(self):
+        return self.fields_data[236:240] == MAGIC_COOKIE
 
-    # Encode Packet and return it
+    def IsOption(self, name):
+        return (name in DHCP_FIELDS) or (name in self.options_data)
+
     def EncodePacket(self):
-
         # MUST set options in order to respect the RFC (see router option)
         head_options, tail_options, options = [], [], []
 
-        for each in self.options_data.keys():
-            payload = [DhcpOptions[each], len(self.options_data[each])]
-            payload += self.options_data[each]
+        for option_name, option in self.options_data.iteritems():
+            payload = [option[0], option[2]]    # type, len
+            payload += option[3]                # raw value
 
-            if DhcpOptions[each] in self.HEAD_OPTIONS:
+            if option[0] in HEAD_OPTIONS:
                 head_options += payload
-            elif DhcpOptions[each] in self.TAIL_OPTIONS:
+            elif option[0] in TAIL_OPTIONS:
                 tail_options += payload
             else:
                 options += payload
 
         options = head_options + options + tail_options
 
-        packet = self.packet_data[:240] + options
-        packet.append(255) # add end option
-        pack_fmt = str(len(packet))+"c"
+        # concatenate fields & options
+        packet = list(self.fields_data[:240]) + options
 
-        packet = map(chr,packet)
-        
-        return pack(pack_fmt,*packet)
+        # end packet with <FF>
+        packet.append(255)
 
+        # caluculate packet length      // hi, cap
+        packet_len = len(packet)
 
-    # Insert packet in the object
-    def DecodePacket(self,data,debug=False):
-        self.packet_data = []
-        self.options_data = {}
-
-        if (not data) : return False
-        # we transform all data to int list
-        unpack_fmt = str(len(data)) + "c"
-        for i in unpack(unpack_fmt,data):
-            self.packet_data.append(ord(i))
-
-        # Some servers or clients don't place magic cookie immediately
-        # after headers and begin options fields only after magic.
-        # These 4 lines search magic cookie and begin iterator after.
-        iterator = 236
-        end_iterator = len(self.packet_data)
-        while ( self.packet_data[iterator:iterator+4] != MagicCookie and iterator < end_iterator) :
-            iterator += 1
-        iterator += 4
-        
-        # parse extended options
-
-        while iterator < end_iterator :
-            if self.packet_data[iterator] == 0 : # pad option
-                opt_first = iterator+1
-                iterator += 1
-
-            elif self.packet_data[iterator] == 255 :
-                self.packet_data = self.packet_data[:240] # base packet length without magic cookie
-                return
-                
-            elif DhcpOptionsTypes.has_key(self.packet_data[iterator]) and self.packet_data[iterator]!= 255:
-                opt_len = self.packet_data[iterator+1]
-                opt_first = iterator+1
-                self.options_data[DhcpOptionsList[self.packet_data[iterator]]] = self.packet_data[opt_first+1:opt_len+opt_first+1]
-                iterator += self.packet_data[opt_first] + 2
-            else :
-                opt_first = iterator+1
-                iterator += self.packet_data[opt_first] + 2
-
-        # cut packet_data to remove options
-        
-        self.packet_data = self.packet_data[:240] # base packet length with magic cookie
-
+        return pack("%dB" % packet_len, *packet)

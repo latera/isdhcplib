@@ -3,7 +3,7 @@ Section: python
 Priority: extra
 Maintainer: Alexander V. Ignatyev <ialx84@ya.ru>
 Build-Depends: debhelper (>= 8.0.0), python-setuptools
-Standards-Version: 0.7.8
+Standards-Version: 1.0.0
 Homepage: https://github.com/ialx/isdhcplib
 Vcs-Git: git://github.com/ialx/isdhcplib.git
 
@@ -12,5 +12,5 @@ Architecture: all
 Depends: ${python:Depends}
 Provides: ${python:Provides}
 Description: Dhcp client/server library
-     Modified by Alexander Ignatyev / based on pydhcplib by Mathieu Ignacio
+     Alexander V. Ignatyev <ialx84@ya.ru> / inspired by pydhcplib by Mathieu Ignacio
 
