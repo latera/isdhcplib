@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-from pydhcplib.dhcp_packet import *
-from pydhcplib.dhcp_network import *
+from isdhcplib.dhcp_packet import *
+from isdhcplib.dhcp_network import *
 
 
 netopt = {'client_listen_port':"68",
@@ -32,18 +32,19 @@ class Server(DhcpServer):
                             options["server_listen_port"])
         
     def HandleDhcpDiscover(self, packet):
-	print packet.str()        
+        print packet
     def HandleDhcpRequest(self, packet):
-	print packet.str()
+        print packet
     def HandleDhcpDecline(self, packet):
-	print packet.str()        
+        print packet
     def HandleDhcpRelease(self, packet):
-	print packet.str()        
+        print packet
     def HandleDhcpInform(self, packet):
-	print packet.str()
+        print packet
 
 
 server = Server(netopt)
 
 while True :
     server.GetNextDhcpPacket()
+

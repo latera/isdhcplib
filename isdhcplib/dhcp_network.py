@@ -124,10 +124,10 @@ class DhcpNetwork:
 
     # Server side Handle methods
     def HandleDhcpDiscover(self, packet):
-    pass
+        pass
 
     def HandleDhcpRequest(self, packet):
-    pass
+        pass
 
     def HandleDhcpDecline(self, packet):
         pass

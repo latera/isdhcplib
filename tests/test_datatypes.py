@@ -3,6 +3,7 @@
 
 from isdhcplib.type_ipv4 import ipv4
 from isdhcplib.type_strlist import strlist
+from isdhcplib.type_rfc import RFC3046
 import unittest
 
 class TestIPv4(unittest.TestCase):
@@ -48,6 +49,24 @@ class TestStrlist(unittest.TestCase):
         self.assertRaises(TypeError, strlist, {"foo": "bar"})   # valid only lists
         self.assertRaises(TypeError, strlist, ["foo", "bar", 1, 2, 3])  # list items should be int
 
+class TestRFC3046(unittest.TestCase):
+    exp_ci_vlan = 1998
+    exp_ci_port = 21
+    exp_ri_mac  = [17, 34, 51, 68, 85, 102]
+    exp_list    = [1, 6, 0, 4, 7, 206, 0, 21, 2, 8, 0, 6, 17, 34, 51, 68, 85, 102]
+
+    def setUp(self):
+        self.rfc3046 = RFC3046(self.exp_list)
+
+    def testRFC3046(self):
+        vlan, module, port = self.rfc3046.AgentCircuitId
+        mac = self.rfc3046.AgentRemoteId
+
+        self.assertEqual(vlan, self.exp_ci_vlan)
+        self.assertEqual(port, self.exp_ci_port)
+        self.assertEqual(mac, self.exp_ri_mac)
+
 
 if __name__ == "__main__":
     unittest.main()
+

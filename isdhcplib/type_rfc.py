@@ -5,78 +5,125 @@ class RFC3046:
     """
     """
 
-    def __init__(self,data):
+    def __init__(self, data):
         """
         """
-        self._agent_remote_id = []
+        self._agent_remote_id  = []
         self._agent_circuit_id = []
 
-        self.empty = True
-        if isinstance(data, (list, tuple)):
-            self._data = data
-        else:
-            self._data = []
+        self.agent_remote_id  = self.agent_circuit_id = []
 
-        if not self._data:
+        self.empty = True
+
+        # check if data not empty
+        if not data or not isinstance(data, (list, tuple)):
             return
-        if self._data[0] == 1:
-            l1 = self._data[1]
-            self._agent_circuit_id = self._data[2:l1+2]
-            if self._data[l1+2] == 2:
-                l2 = self._data[l1+3]
-                self._agent_remote_id = self._data[l1+4:l1+4+l2]
+
+        # keep passed data for later use
+        self._raw_data = data
+
+        # decode suboptions
+        self._agent_circuit_id, self._agent_remote_id = self._decodeSubopts(data)
+
+        if len(self._agent_circuit_id) > 2:
+            self.agent_circuit_id = self._decodeAgentCircuitId(self._agent_circuit_id)
+
+        if len(self._agent_remote_id) > 2:
+            self.agent_remote_id = self._decodeAgentRemoteId(self._agent_remote_id)
 
         self.empty = False
 
-    def StrAgentRemoteId(self):
-        """
-        """
-        return ':'.join([ '%02X'%c for c in self._agent_remote_id])
+    def _decodeSubopts(self, data):
+        suboptions = {1: [], 2:[]}
+        pos = 0
 
-    def ListAgentRemoteId(self):
-        """
-        """
-        return self._agent_remote_id
+        while pos < len(data):
+            suboption_code, suboption_len = data[pos:pos+2]
 
-    def StrAgentCircuitId(self):
-        """
-        """
-        return ':'.join([ '%02X'%c for c in self._agent_circuit_id])
+            if suboption_code not in suboptions:
+                # Malformed DHCP agent relay field
+                break
 
-    def ListAgentCircuitId(self):
-        """
-        """
-        return self._agent_circuit_id
+            suboptions[suboption_code] = data[pos+2:pos+2+suboption_len]
+            pos += 2 + suboption_len
+        
+        return suboptions[1], suboptions[2]
 
-    def AgentRemoteId_MAC(self):
-        """
-        """
-        return ':'.join([ '%02X'%c for c in self._agent_remote_id[-6:]])
 
-    def AgentCircuitId_Port(self):
+    def _decodeAgentCircuitId(self, agent_circuit_id):
         """
-        """
-        try:
-            port = '%d'%self._agent_circuit_id[-1]
-        except:
-            port = "0"
+        D-Link DHCP option 82 Circuit ID suboption format:
 
-        return port
+        +-----+-----+-----+-----+-----------+-------------+-----------+
+        |  1) |  2) |  3) |  4) |     5)    |      6)     |    7)     |
+        +=====+=====+=====+=====+===========+=============+===========+
+        |  1  |  6  |  0  |  4  |  VLAN(2)  |  Module(1)  |  Port(1)  |
+        +-----+-----+-----+-----+-----------+-------------+-----------+
 
-    def AgentCircuitId_Vlan(self):
+        1) Suboption type
+        2) Length
+        3) Circuit ID type
+        4) Length
+        5) VLAN id
+        6) Module (0 for standalone, Unit ID for stackable)
+        7) Port
         """
-        """
-        try:
-            x = 0
-            for i in (1, 0):
-                x += self._agent_circuit_id[3 - i] << i * 8
-        except:
-            x = 0
 
-        return x
+        circuit_id_vlan   = 0
+        circuit_id_module = 0
+        circuit_id_port   = 0
+
+        circuit_id_type, circuit_id_len = agent_circuit_id[:2]
+
+        if circuit_id_type == 0 and circuit_id_len == 4:
+            circuit_id_vlan   = reduce(lambda x, y: (x << 8) + y, 
+                                agent_circuit_id[2:4], 0)
+            circuit_id_module = agent_circuit_id[4]
+            circuit_id_port   = agent_circuit_id[5]
+
+        return circuit_id_vlan, circuit_id_module, circuit_id_port
+
+
+    def _decodeAgentRemoteId(self, agent_remote_id):
+        """
+        D-Link DHCP option 82 Remote ID suboption format:
+
+        +-----+-----+-----+-----+-------------------+
+        |  1) |  2) |  3) |  4) |       5)          | 
+        +=====+=====+=====+=====+===================+
+        |  2  |  8  |  0  |  6  |  MAC ADDRESS (6)  |
+        +-----+-----+-----+-----+-------------------+
+
+        1) Suboption type
+        2) Length
+        3) Remote ID type
+        4) Length
+        5) MAC address (or sysname?)
+        """
+
+        remote_id_mac    = []
+
+        remote_id_type, remote_id_len = agent_remote_id[:2]
+
+        if remote_id_type == 0 and remote_id_len > 0:
+            remote_id_mac   = agent_remote_id[-remote_id_len:]
+
+        return remote_id_mac
+
+
+    @property
+    def AgentRemoteId(self):
+        return self.agent_remote_id
+
+
+    @property
+    def AgentCircuitId(self):
+        return self.agent_circuit_id
+
 
     def __len__(self):
-        return len(self._data)
+        return len(self._raw_data)
+
 
 class RFC3442:
     def __init__(self, routes):
