@@ -39,7 +39,7 @@ setup(
     url='https://github.com/ialx/isdhcplib',
     packages=find_packages(),
     scripts=['scripts/isdhcp'],
-    test_suite='isdhcplib.tests.alltests',
+    test_suite='tests.alltests',
     data_files=[
         ("share/man/man8",en8_manpages),
         #            ("share/man/fr/man8",fr8_manpages),
