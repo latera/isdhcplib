@@ -31,15 +31,15 @@ packages = [
 
 setup(
     name='isdhcplib',
-    version="1.0",
+    version="1.0.1",
     license='GPL v3',
     description='Dhcp client/server library',
     author='Alexander Ignatyev / based on pydhcplib by Mathieu Ignacio',
     author_email='ialx84@ya.ru',
     url='https://github.com/ialx/isdhcplib',
-    packages=packages,
+    packages=find_packages(),
     scripts=['scripts/isdhcp'],
-    test_suite='tests.alltests',
+    test_suite='isdhcplib.tests.alltests',
     data_files=[
         ("share/man/man8",en8_manpages),
         #            ("share/man/fr/man8",fr8_manpages),

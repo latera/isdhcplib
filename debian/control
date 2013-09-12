@@ -3,7 +3,7 @@ Section: python
 Priority: extra
 Maintainer: Alexander V. Ignatyev <ialx84@ya.ru>
 Build-Depends: debhelper (>= 8.0.0), python-setuptools
-Standards-Version: 1.0.0
+Standards-Version: 1.0.1
 Homepage: https://github.com/ialx/isdhcplib
 Vcs-Git: git://github.com/ialx/isdhcplib.git
 

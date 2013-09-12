@@ -1,10 +1,12 @@
 #!/usr/bin/env python 
 #-*- coding: utf-8 -*-
 
+import unittest
+
 from isdhcplib.type_ipv4 import ipv4
 from isdhcplib.type_strlist import strlist
 from isdhcplib.type_rfc import RFC3046
-import unittest
+
 
 class TestIPv4(unittest.TestCase):
     orig_ip_str = "127.0.0.1"
@@ -48,6 +50,7 @@ class TestStrlist(unittest.TestCase):
     def testExceptions(self):
         self.assertRaises(TypeError, strlist, {"foo": "bar"})   # valid only lists
         self.assertRaises(TypeError, strlist, ["foo", "bar", 1, 2, 3])  # list items should be int
+
 
 class TestRFC3046(unittest.TestCase):
     exp_ci_vlan = 1998

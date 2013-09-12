@@ -1,3 +1,9 @@
+python-isdhcplib (1.0.1) testing; urgency=low
+
+  * Minor updates & tests for RFC3046
+
+ -- Alexander V. Ignatyev <ialx84@ya.ru>  Thu, 12 Sep 2013 11:54:21 +0600
+
 python-isdhcplib (1.0.0) testing; urgency=low
 
   * Useful oneliners
