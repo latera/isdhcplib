@@ -108,9 +108,12 @@ class ipv4:
         return self._ip_string
 
     def __cmp__(self, other):
-        if isinstance(other, (int, long)):
+        if type(self) == type(other):
+            return cmp(self._ip_long, other._ip_long)
+        elif isinstance(other, (int, long)):
             return cmp(self._ip_long, other)
-        return cmp(self._ip_long, other._ip_long);
+
+        raise TypeError("IPV4 can be compared with IPV4 and integers")
 
     def __nonzero__(self) :
         if self._ip_long != 0 : return 1
