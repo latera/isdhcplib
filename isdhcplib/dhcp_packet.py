@@ -16,16 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import operator
-from struct import unpack
-from struct import pack
-from dhcp_basic_packet import *
-from dhcp_constants import *
-from type_ipv4 import ipv4
-from type_strlist import strlist
-from type_hwmac import hwaddr
-import sys
-from collections    import Iterable
+from isdhcplib.dhcp_basic_packet import *
+from isdhcplib.dhcp_constants import *
+from isdhcplib.type_hwmac import hwaddr
+
 
 class DhcpPacket(DHCPBasicPacket):
     def __str__(self):
@@ -47,10 +41,16 @@ class DhcpPacket(DHCPBasicPacket):
     # DhcpBasicPacket.DecodePacket().
 
     # Test Packet Type
-    def IsDhcpSomethingPacket(self,type):
-        if self.IsDhcpPacket() == False : return False
-        if self.IsOption("dhcp_message_type") == False : return False
-        if self.GetOption("dhcp_message_type") != type : return False
+    def IsDhcpSomethingPacket(self, type):
+        if self.IsDhcpPacket() == False:
+            return False
+
+        if self.IsOption("dhcp_message_type") == False:
+            return False
+
+        if self.GetOption("dhcp_message_type") != type:
+            return False
+
         return True
     
     def IsDhcpDiscoverPacket(self):
@@ -77,22 +77,18 @@ class DhcpPacket(DHCPBasicPacket):
     def IsDhcpInformPacket(self):
         return self.IsDhcpSomethingPacket([8])
 
-
-    def GetMultipleOptions(self,options=()):
+    def GetMultipleOptions(self, options=()):
         result = {}
         for each in options:
             result[each] = self.GetOption(each)
         return result
 
-    def SetMultipleOptions(self,options={}):
+    def SetMultipleOptions(self, options=None):
+        options = options or {}
+
         for each in options.keys():
-            print each, options[each]
-            self.SetOption(each,options[each])
-
-
-
-
-
+            print(each, options[each])
+            self.SetOption(each, options[each])
 
     # Creating Response Packet
 
@@ -104,8 +100,9 @@ class DhcpPacket(DHCPBasicPacket):
         for option in ("htype", "xid", "flags", "giaddr", "chaddr",
                         "ip_address_lease_time"):
             option_data = self.GetOption(option)
-            print "%s = %s" % (option, option_data)
-            if option_data is None: continue
+            print("%s = %s" % (option, option_data))
+            if option_data is None:
+                continue
 
             dhcp_offer.SetOption(option, option_data)
             
@@ -114,9 +111,9 @@ class DhcpPacket(DHCPBasicPacket):
         return dhcp_offer
 
     def TransformToDhcpOfferPacket(self):
-        self.SetOption("dhcp_message_type",[2])
-        self.SetOption("op",[2])
-        self.SetOption("hlen",[6]) 
+        self.SetOption("dhcp_message_type", [2])
+        self.SetOption("op", [2])
+        self.SetOption("hlen", [6])
 
         self.DeleteOption("secs")
         self.DeleteOption("ciaddr")
@@ -152,10 +149,11 @@ class DhcpPacket(DHCPBasicPacket):
 
         return dhcp_inform
 
-    def TransformToDhcpAckPacket(self): # src = request or inform packet
-        self.SetOption("op",[2])
-        self.SetOption("hlen",[6]) 
-        self.SetOption("dhcp_message_type",[5])
+    def TransformToDhcpAckPacket(self):
+        # src = request or inform packet
+        self.SetOption("op", [2])
+        self.SetOption("hlen", [6])
+        self.SetOption("dhcp_message_type", [5])
 
         self.DeleteOption("secs")
         self.DeleteOption("request_ip_address")
@@ -163,15 +161,16 @@ class DhcpPacket(DHCPBasicPacket):
         self.DeleteOption("client_identifier")
         self.DeleteOption("maximum_message_size")
 
-
-    """ Dhcp NAK packet creation """
-    def CreateDhcpNackPacketFrom(self): # src = request or inform packet
+    def CreateDhcpNackPacketFrom(self):
+        # src = request or inform packet
+        """ Dhcp NAK packet creation """
         dhcp_nak = DhcpPacket(self.EncodePacket())
 
         # copy fields from packet
         for option in ("htype", "xid", "flags", "giaddr", "chaddr"):
             option_data = self.GetOption(option)
-            if option_data is None: continue
+            if option_data is None:
+                continue
 
             dhcp_nak.SetOption(option, option_data)
 
@@ -180,8 +179,8 @@ class DhcpPacket(DHCPBasicPacket):
         return dhcp_nak
 
     def TransformToDhcpNackPacket(self):
-        self.SetOption("op",[2])
-        self.SetOption("hlen",[6]) 
+        self.SetOption("op", [2])
+        self.SetOption("hlen", [6])
         self.DeleteOption("secs")
         self.DeleteOption("ciaddr")
         self.DeleteOption("yiaddr")
@@ -195,20 +194,19 @@ class DhcpPacket(DHCPBasicPacket):
         self.DeleteOption("maximum_message_size")
         self.SetOption("dhcp_message_type", [6])
 
-
-
-
     """ GetClientIdentifier """
 
-    def GetClientIdentifier(self) :
-        if self.IsOption("client_identifier") :
+    def GetClientIdentifier(self):
+        if self.IsOption("client_identifier"):
             return self.GetOption("client_identifier")
+
         return []
 
-    def GetGiaddr(self) :
+    def GetGiaddr(self):
         return self.GetOption("giaddr")
 
     def GetHardwareAddress(self):
         hwaddr_len = self.GetOption("hlen")[0]
         hwaddr_list = self.GetOption("chaddr")
+
         return hwaddr(hwaddr_list[:hwaddr_len])

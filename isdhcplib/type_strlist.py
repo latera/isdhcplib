@@ -16,20 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-class strlist:
+
+class strlist(object):
     def __init__(self, value=""):
         self._str = ""
         self._numeric_list = []
         
-        if isinstance(value, basestring):
-            self._str          = value
+        if isinstance(value, str):
+            self._str = value
             self._numeric_list = self._StringToNumericList(value)
         elif isinstance(value, (list, tuple)):
-            if not self.ValidNumericList(value): raise TypeError("List can't be converted to string")
+            if not self.ValidNumericList(value):
+                raise TypeError("List can't be converted to string")
 
             self._numeric_list = value
             self._str = self._NumericListToString(value)
-        else : raise TypeError , 'strlist init : Valid types are str and  list of int'
+        else:
+            raise TypeError('strlist init : Valid types are str '
+                            'and list of int')
 
     #
     # Private converters
@@ -55,11 +59,13 @@ class strlist:
         return self._str
 
     def __nonzero__(self) :
-        if self._str != "" : return 1
+        if self._str != "":
+            return 1
         return 0
 
-    def __cmp__(self,other) :
-        if self._str == other : return 0
+    def __cmp__(self, other):
+        if self._str == other:
+            return 0
         return 1
 
     # return string

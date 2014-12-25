@@ -2,7 +2,8 @@
 
 import unittest
 
-import os.path, sys
+import os.path
+import sys
 sys.path.insert(0, os.path.abspath('..'))
 
 from isdhcplib.dhcp_packet import DhcpPacket
@@ -71,11 +72,11 @@ dhcp_packet = [
 
 dhcp_packet_raw = ''.join(map(chr, dhcp_packet))
 dp = DhcpPacket(dhcp_packet_raw)
-print dp.IsDhcpPacket
-print dp.GetOption("hlen")
-print dp.GetOption("flags")
-print "SET:", dp.SetOption("lpr_server", [127,0,0,1])
-print dp.GetHardwareAddress()
-print dp.EncodePacket()
+print(dp.IsDhcpPacket)
+print(dp.GetOption("hlen"))
+print(dp.GetOption("flags"))
+print("SET:", dp.SetOption("lpr_server", [127, 0, 0, 1]))
+print(dp.GetHardwareAddress())
+print(dp.EncodePacket())
 
-print str(dp.CreateDhcpNackPacketFrom())
+print(str(dp.CreateDhcpNackPacketFrom()))

@@ -16,21 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 from struct import pack, unpack
-from dhcp_constants import *
-from type_ipv4 import ipv4
-from type_strlist import strlist
-from type_rfc import *
+from isdhcplib.dhcp_constants import *
+from isdhcplib.type_ipv4 import ipv4
+from isdhcplib.type_rfc import *
 
 
 # DhcpPacket : base class to encode/decode dhcp packets.
-
-
 class DHCP_DECODER(object):
     def decode(self, type_spec, data, data_len):
         if type_spec not in self._type_map:
-            print "No decoder for spec: %s" % type_spec
+            print("No decoder for spec: %s" % type_spec)
 
             return data[:data_len]
 
@@ -44,13 +40,13 @@ class DHCP_DECODER(object):
     def validate_len(self, type_spec, data_len):
         spec = self._spec_map.get(type_spec, None)
         if not spec:
-            print "No decoder for spec: %s" % type_spec
+            print("No decoder for spec: %s" % type_spec)
             return False
 
-        print type_spec, data_len
+        print(type_spec, data_len)
 
-        if (spec[0] != 0 and spec[0] == data_len) \
-            or (spec[1] <= data_len and data_len % spec[2] == 0):
+        if (spec[0] != 0 and spec[0] == data_len) or \
+                (spec[1] <= data_len and data_len % spec[2] == 0):
             return True
 
         return False
@@ -125,7 +121,7 @@ class DHCP_DECODER(object):
         "char":   [1, 1, 0],
         "char+":  [0, 0, 1],
         "ipv4":   [4, 4, 0],
-        "ipv4+":  [0, 4 ,4],
+        "ipv4+":  [0, 4, 4],
         "32-bits": [4, 4, 0],
         "string": [0, 0, 1],
         "RFC3046": None,
@@ -141,7 +137,8 @@ class DHCPBasicPacket(object):
 
     def __init__(self, data):
         # multimethod?
-        if (not data): return False
+        if not data:
+            return False
 
         # init objects
         self.fields_data  = {}
@@ -151,14 +148,13 @@ class DHCPBasicPacket(object):
         data_len = len(data)
 
         # convert string to tuple of intergers
-        if isinstance(data, basestring):
+        if isinstance(data, str):
             # unpack to tuple of integers
             data = list(unpack("!%dB" % data_len, data))
 
         # packet_data is header with magic cookie
-        self.fields_data  = data[:self._offset_options + 4]
+        self.fields_data = data[:self._offset_options + 4]
         self.options_data = self._DecodeOptions(data, data_len)
-
 
     def _DecodeOptions(self, data, data_len):
         # lookup magic cookie. ideally it should be found exactly after fields.
@@ -167,7 +163,7 @@ class DHCPBasicPacket(object):
         options = {}
 
         # iterate through data
-        while (offset < data_len):
+        while offset < data_len:
             if data[offset:offset+4] == MAGIC_COOKIE: 
                 break
             
@@ -180,7 +176,7 @@ class DHCPBasicPacket(object):
         last_option = None
 
         # parse options
-        while (offset < data_len):
+        while offset < data_len:
             option_start = option_end = offset
 
             if data[offset] == 255:
@@ -208,7 +204,7 @@ class DHCPBasicPacket(object):
                 name, option_type = DHCP_OPTIONS.get(option, (None, None))
 
                 if not name or not option_type:
-                    print "Unknown DHCP OPTION: %s" % option
+                    print("Unknown DHCP OPTION: %s" % option)
                     continue
 
                 options[name] = (option, option_type, option_len, option_data)
@@ -254,7 +250,8 @@ class DHCPBasicPacket(object):
         # Requested option
         elif name in self.options_data:
             # Get option data
-            option_num, option_type, option_len, option_data = self.options_data[name]
+            option_num, option_type, option_len, option_data = \
+                self.options_data[name]
         else:
             return None
         
@@ -287,7 +284,8 @@ class DHCPBasicPacket(object):
             pos, field_len, field_type = DHCP_FIELDS[name]
 
             if len(value) != field_len:
-                print "Wrong value=%d for field %s. Expected %d" % (len(value), name, field_len)
+                print("Wrong value=%d for field %s. Expected %d" %
+                      (len(value), name, field_len))
                 return False
 
             self.fields_data[pos:pos + field_len] = value
@@ -299,13 +297,13 @@ class DHCPBasicPacket(object):
 
             option_name, option_type = DHCP_OPTIONS[option_num]
             if self.decoder.validate_len(option_type, len(value)):
-                self.options_data[name] = (option_num, option_type, len(value), value)
+                self.options_data[name] = (option_num, option_type,
+                                           len(value), value)
                 return True
 
         else:
-            print "Unknown option: %s" % name
+            print("Unknown option: %s" % name)
             return False
-
 
     @property
     def IsDhcpPacket(self):

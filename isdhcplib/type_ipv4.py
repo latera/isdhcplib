@@ -16,34 +16,41 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+from functools import reduce
+
 
 # Check and convert ipv4 address type
-class ipv4:
-    def __init__(self, value="0.0.0.0") :
+class ipv4(object):
+    def __init__(self, value="0.0.0.0"):
         self._ip_string = "0.0.0.0"
-        self._ip_numlist = (0,0,0,0)
+        self._ip_numlist = (0, 0, 0, 0)
         self._ip_long = 0
 
-        if isinstance(value, basestring):
-            if not self.ValidString(value) : raise ValueError, "ipv4 string argument is not an valid ip "
+        if isinstance(value, str):
+            if not self.ValidString(value):
+                raise ValueError("ipv4 string argument is not an valid ip ")
 
-            self._ip_string  = value
-            self._ip_numlist = self._StringToNumlist(value) # convert to list
-            self._ip_long    = self._StringToLong(value)    # convert lo int
+            self._ip_string = value
+            # convert to list
+            self._ip_numlist = self._StringToNumlist(value)
+            # convert lo int
+            self._ip_long = self._StringToLong(value)
         elif isinstance(value, (list, tuple)):
-            if not self.ValidList(value) : raise ValueError, "ipv4 list argument is not an valid ip "
+            if not self.ValidList(value):
+                raise ValueError("ipv4 list argument is not an valid ip ")
 
             self._ip_numlist = value
-            self._ip_string  = self._NumlistToString(value)
-            self._ip_long    = self._NumlistToLong(value)
-        elif isinstance(value, (int, long)):
-            if not self.ValidInteger(value) : raise ValueError, "ipv4 int argument is not an valid ip "
+            self._ip_string = self._NumlistToString(value)
+            self._ip_long = self._NumlistToLong(value)
+        elif isinstance(value, int):
+            if not self.ValidInteger(value):
+                raise ValueError("ipv4 int argument is not an valid ip ")
 
-            self._ip_long    = value
-            self._ip_string  = self._LongToString(value)
+            self._ip_long = value
+            self._ip_string = self._LongToString(value)
             self._ip_numlist = self._LongToNumlist(value)
-
-        else : raise TypeError , 'ipv4 init : Valid types are str, list, int or long'
+        else:
+            raise TypeError('ipv4 init : Valid types are str, list or int')
 
     #
     # Private conversion methods
@@ -74,7 +81,7 @@ class ipv4:
     # Convert Long type ip to numlist ip
     def _LongToNumlist(self, value):
         # Convert IPv4 long integer to list
-        return [(self._ip_long >> 8 * (3 - i)) % 256 for i in xrange(4)]
+        return [(self._ip_long >> 8 * (3 - i)) % 256 for i in range(4)]
 
     #
     # Public validators

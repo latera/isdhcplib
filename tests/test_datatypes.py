@@ -1,5 +1,4 @@
 #!/usr/bin/env python 
-#-*- coding: utf-8 -*-
 
 import unittest
 
@@ -11,7 +10,7 @@ from isdhcplib.type_rfc import RFC3046
 class TestIPv4(unittest.TestCase):
     orig_ip_str = "127.0.0.1"
     orig_ip_list = [127, 0, 0, 1]
-    orig_ip_int  = 2130706433
+    orig_ip_int = 2130706433
 
     def setUp(self):
         self.ip_str = ipv4(self.orig_ip_str)
@@ -28,19 +27,24 @@ class TestIPv4(unittest.TestCase):
         self.assertRaises(TypeError, ipv4, {"foo": "bar"})
 
         # test validators
-        self.assertRaises(ValueError, ipv4, "foobar")       # non dotted decimal
-        self.assertRaises(ValueError, ipv4, "1.1.1.1.1")    # 5 octets
-        self.assertRaises(ValueError, ipv4, [444,444,444,444])  # 444 > 255
-        self.assertRaises(ValueError, ipv4, [1,1,1,1,1])    # 5 octets
-        self.assertRaises(ValueError, ipv4, 99999999999)    # very big int
+        # non dotted decimal
+        self.assertRaises(ValueError, ipv4, "foobar")
+        # 5 octets
+        self.assertRaises(ValueError, ipv4, "1.1.1.1.1")
+        # 444 > 255
+        self.assertRaises(ValueError, ipv4, [444, 444, 444, 444])
+        # 5 octets
+        self.assertRaises(ValueError, ipv4, [1, 1, 1, 1, 1])
+        # very big int
+        self.assertRaises(ValueError, ipv4, 99999999999)
 
 
 class TestStrlist(unittest.TestCase):
     orig_string = "test"
-    orig_list   = [116, 101 , 115, 116]
+    orig_list = [116, 101, 115, 116]
 
     def setUp(self):
-        self.strlist_str  = strlist(self.orig_string)
+        self.strlist_str = strlist(self.orig_string)
         self.strlist_list = strlist(self.orig_list)
 
     def testStrlist(self):
@@ -48,15 +52,17 @@ class TestStrlist(unittest.TestCase):
         self.assertEqual(list(self.strlist_str), self.orig_list)
 
     def testExceptions(self):
-        self.assertRaises(TypeError, strlist, {"foo": "bar"})   # valid only lists
-        self.assertRaises(TypeError, strlist, ["foo", "bar", 1, 2, 3])  # list items should be int
+        # valid only lists
+        self.assertRaises(TypeError, strlist, {"foo": "bar"})
+        # list items should be int
+        self.assertRaises(TypeError, strlist, ["foo", "bar", 1, 2, 3])
 
 
 class TestRFC3046(unittest.TestCase):
     exp_ci_vlan = 1998
     exp_ci_port = 21
-    exp_ri_mac  = [17, 34, 51, 68, 85, 102]
-    exp_list    = [1, 6, 0, 4, 7, 206, 0, 21, 2, 8, 0, 6, 17, 34, 51, 68, 85, 102]
+    exp_ri_mac = [17, 34, 51, 68, 85, 102]
+    exp_list = [1, 6, 0, 4, 7, 206, 0, 21, 2, 8, 0, 6, 17, 34, 51, 68, 85, 102]
 
     def setUp(self):
         self.rfc3046 = RFC3046(self.exp_list)

@@ -9,14 +9,14 @@
 # option) any later version. Please read the COPYING file.
 #
 
-import os
 import array
 import fcntl
 import struct
 import socket
 import platform
 
-class interface:
+
+class interface(object):
     """ ioctl stuff """
 
     # get platform architecture
@@ -57,8 +57,6 @@ class interface:
     IFF_PORTSEL = 0x2000   # Can set media type.
     IFF_AUTOMEDIA = 0x4000 # Auto media select active.
 
-    
-
     def __init__(self):
         # create a socket to communicate with system
         self.sockfd = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -66,13 +64,14 @@ class interface:
     def _ioctl(self, func, args):
         return fcntl.ioctl(self.sockfd.fileno(), func, args)
 
-    def _call(self, ifname, func, ip = None):
+    def _call(self, ifname, func, ip=None):
 
         if ip is None:
             data = (ifname + '\0'*32)[:32]
         else:
             ifreq = (ifname + '\0' * self.IFNAMSIZ)[:self.IFNAMSIZ]
-            data = struct.pack("16si4s10x", ifreq, socket.AF_INET, socket.inet_aton(ip))
+            data = struct.pack("16si4s10x", ifreq, socket.AF_INET,
+                               socket.inet_aton(ip))
 
         try:
             result = self._ioctl(func, data)
@@ -85,7 +84,8 @@ class interface:
         """ Get all interface names in a list """
         # get interface list
         buffer = array.array('c', '\0' * self.IFCONFSIZ)
-        ifconf = struct.pack("iP", buffer.buffer_info()[1], buffer.buffer_info()[0])
+        ifconf = struct.pack("iP", buffer.buffer_info()[1],
+                             buffer.buffer_info()[0])
         result = self._ioctl(self.SIOCGIFCONF, ifconf)
 
         # loop over interface names
@@ -101,9 +101,10 @@ class interface:
         field_size = 16 if self.ARCH == 32 else 20
 
         # walk through buffer
-        for idx in xrange(0, size, field_size*2):
-            ifconf = buffer.tostring()[idx:idx+(field_size*2)]
-            name, ip = struct.unpack("%ds%ds" % (field_size, field_size), ifconf)
+        for idx in range(0, size, field_size * 2):
+            ifconf = buffer.tostring()[idx:idx + (field_size * 2)]
+            name, ip = struct.unpack("%ds%ds" % (field_size, field_size),
+                                     ifconf)
 
             name = "".join([c for c in name[:self.IFNAMSIZ] if ord(c) != 0])
             ip = map(ord, ip[:4])
